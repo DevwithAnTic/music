@@ -1,0 +1,16 @@
+{
+  "name": "youtube-audio-backend",
+  "version": "1.0.0",
+  "description": "Backend integration to fetch direct YouTube audio stream URLs",
+  "main": "getAudio.js",
+  "type": "commonjs",
+  "scripts": {
+    "get-audio": "node getAudio.js"
+  },
+  "dependencies": {
+    "debug": "^4.3.7",
+    "youtube-dl-exec": "^3.0.0",
+    "youtube-search-api": "^2.0.1",
+    "youtubei.js": "^16.0.1"
+  }
+}

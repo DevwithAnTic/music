@@ -1,0 +1,23 @@
+# Node
+node_modules/
+**/node_modules/
+npm-debug.log*
+
+# Build outputs
+dist/
+**/dist/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Local artifacts
+backend-prod.zip

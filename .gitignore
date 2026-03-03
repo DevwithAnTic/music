@@ -21,3 +21,6 @@ Thumbs.db
 
 # Local artifacts
 backend-prod.zip
+
+.vercel
+.env*.local

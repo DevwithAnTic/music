@@ -280,6 +280,22 @@ function require_auth_if_enabled(): void
         return;
     }
 
+    $strategy = strtolower(trim((string)env_value('AUTH_STRATEGY', 'bearer')));
+    if (!in_array($strategy, ['bearer', 'origin', 'bearer_or_origin'], true)) {
+        $strategy = 'bearer';
+    }
+
+    if ($strategy === 'origin' || $strategy === 'bearer_or_origin') {
+        $origin = (string)($_SERVER['HTTP_ORIGIN'] ?? '');
+        $allowedOrigins = array_values(array_filter(array_map('trim', explode(',', env_value('ALLOWED_ORIGINS', 'http://localhost:5173')))));
+        if ($origin !== '' && is_origin_allowed($origin, $allowedOrigins)) {
+            return;
+        }
+        if ($strategy === 'origin') {
+            send_json(401, ['error' => 'Unauthorized origin.', 'requestId' => request_id()]);
+        }
+    }
+
     $token = env_value('API_TOKEN', '');
     if ($token === '') {
         log_event('error', 'AUTH_REQUIRED is enabled but API_TOKEN is missing.');

@@ -250,6 +250,10 @@ document.querySelector("#app").innerHTML = `
       <div class="desktop-expanded-shell">
         <div class="desktop-stage">
           <img id="desktopArtwork" class="desktop-artwork" src="${DEFAULT_TRACK_THUMBNAIL}" alt="" />
+          <div class="desktop-stage-meta">
+            <p id="desktopStageTitle" class="desktop-stage-title">${DEFAULT_TRACK_TITLE}</p>
+            <p id="desktopStageArtist" class="desktop-stage-artist">${DEFAULT_TRACK_ARTIST}</p>
+          </div>
         </div>
         <aside class="desktop-side">
           <div class="desktop-tabs">
@@ -271,12 +275,13 @@ document.querySelector("#app").innerHTML = `
       <div id="desktopDock" class="desktop-dock">
         <div id="desktopDockProgress" class="desktop-dock-progress">
           <span id="desktopDockProgressFill" class="desktop-dock-progress-fill"></span>
+          <span id="desktopDockProgressThumb" class="desktop-dock-progress-thumb"></span>
         </div>
+        <span id="desktopDockTime" class="desktop-dock-time">0:00 / 0:00</span>
         <div class="desktop-dock-controls">
           <button id="desktopPrevBtn" type="button" class="desktop-dock-btn" aria-label="Previous track">|◀</button>
           <button id="desktopPlayPauseBtn" type="button" class="desktop-dock-btn is-primary" aria-label="Play or pause">▶</button>
           <button id="desktopNextBtn" type="button" class="desktop-dock-btn" aria-label="Next track">▶|</button>
-          <span id="desktopDockTime" class="desktop-dock-time">0:00 / 0:00</span>
         </div>
         <div class="desktop-dock-track">
           <img id="desktopDockThumb" class="desktop-dock-thumb" src="${DEFAULT_TRACK_THUMBNAIL}" alt="" />
@@ -303,6 +308,7 @@ document.querySelector("#app").innerHTML = `
     <section id="desktopMiniBar" class="desktop-mini-bar hidden">
       <div id="desktopMiniProgress" class="desktop-mini-progress">
         <span id="desktopMiniProgressFill" class="desktop-mini-progress-fill"></span>
+        <span id="desktopMiniProgressThumb" class="desktop-mini-progress-thumb"></span>
       </div>
       <div class="desktop-mini-left">
         <button id="desktopMiniPrevBtn" type="button" class="desktop-mini-btn" aria-label="Previous track">|◀</button>
@@ -383,6 +389,8 @@ const desktopLyricsStatus = document.querySelector("#desktopLyricsStatus");
 const desktopLyricsText = document.querySelector("#desktopLyricsText");
 const desktopRelatedPanel = document.querySelector("#desktopRelatedPanel");
 const desktopArtwork = document.querySelector("#desktopArtwork");
+const desktopStageTitle = document.querySelector("#desktopStageTitle");
+const desktopStageArtist = document.querySelector("#desktopStageArtist");
 const desktopQueueList = document.querySelector("#desktopQueueList");
 const desktopPrevBtn = document.querySelector("#desktopPrevBtn");
 const desktopPlayPauseBtn = document.querySelector("#desktopPlayPauseBtn");
@@ -391,6 +399,7 @@ const desktopDock = document.querySelector("#desktopDock");
 const desktopDockTime = document.querySelector("#desktopDockTime");
 const desktopDockProgress = document.querySelector("#desktopDockProgress");
 const desktopDockProgressFill = document.querySelector("#desktopDockProgressFill");
+const desktopDockProgressThumb = document.querySelector("#desktopDockProgressThumb");
 const desktopDockThumb = document.querySelector("#desktopDockThumb");
 const desktopDockTitle = document.querySelector("#desktopDockTitle");
 const desktopDockArtist = document.querySelector("#desktopDockArtist");
@@ -408,6 +417,7 @@ const desktopMiniNextBtn = document.querySelector("#desktopMiniNextBtn");
 const desktopMiniTime = document.querySelector("#desktopMiniTime");
 const desktopMiniProgress = document.querySelector("#desktopMiniProgress");
 const desktopMiniProgressFill = document.querySelector("#desktopMiniProgressFill");
+const desktopMiniProgressThumb = document.querySelector("#desktopMiniProgressThumb");
 const desktopMiniThumb = document.querySelector("#desktopMiniThumb");
 const desktopMiniTitle = document.querySelector("#desktopMiniTitle");
 const desktopMiniArtist = document.querySelector("#desktopMiniArtist");
@@ -1072,10 +1082,10 @@ function formatTime(totalSeconds) {
 function getSavedVolume() {
   try {
     const parsed = Number(localStorage.getItem(PLAYER_VOLUME_KEY));
-    if (!Number.isFinite(parsed)) return 0.85;
+    if (!Number.isFinite(parsed)) return 1;
     return Math.min(1, Math.max(0, parsed));
   } catch {
-    return 0.85;
+    return 1;
   }
 }
 
@@ -1087,7 +1097,24 @@ function saveVolume(volume) {
   }
 }
 
+function isPhoneUi() {
+  return window.matchMedia("(max-width: 640px)").matches;
+}
+
+function enforcePhoneVolume() {
+  if (!isPhoneUi()) return;
+  const needsReset = audioPlayer.muted || audioPlayer.volume < 0.999;
+  if (!needsReset) return;
+  audioPlayer.muted = false;
+  audioPlayer.volume = 1;
+  volumeControl.value = "1";
+  desktopVolumeControl.value = "1";
+  desktopMiniVolume.value = "1";
+  saveVolume(1);
+}
+
 function updatePlayerUi() {
+  enforcePhoneVolume();
   const duration = Number.isFinite(audioPlayer.duration) ? audioPlayer.duration : 0;
   const current = Number.isFinite(audioPlayer.currentTime) ? audioPlayer.currentTime : 0;
   const progress = duration > 0 ? Math.round((current / duration) * 1000) : 0;
@@ -1123,6 +1150,8 @@ function updatePlayerUi() {
   desktopMiniVolume.value = String(audioPlayer.volume);
   desktopDockProgressFill.style.width = `${progressPercent}%`;
   desktopMiniProgressFill.style.width = `${progressPercent}%`;
+  desktopDockProgressThumb.style.left = `${progressPercent}%`;
+  desktopMiniProgressThumb.style.left = `${progressPercent}%`;
   updateSyncedLyrics(current);
 }
 
@@ -1145,6 +1174,7 @@ volumeControl.value = String(initialVolume);
 desktopVolumeControl.value = String(initialVolume);
 desktopMiniVolume.value = String(initialVolume);
 updatePlayerUi();
+window.addEventListener("resize", updatePlayerUi);
 
 togglePlayBtn.addEventListener("click", togglePlayback);
 
@@ -1200,8 +1230,7 @@ function seekToRatio(ratio) {
   updatePlayerUi();
 }
 
-function handleDesktopProgressTap(event, container) {
-  if (!window.matchMedia("(min-width: 1024px)").matches) return;
+function handleProgressPointer(event, container) {
   const rect = container.getBoundingClientRect();
   if (rect.width <= 0) return;
   const ratio = (event.clientX - rect.left) / rect.width;
@@ -1209,12 +1238,46 @@ function handleDesktopProgressTap(event, container) {
 }
 
 desktopDockProgress.addEventListener("click", (event) => {
-  handleDesktopProgressTap(event, desktopDockProgress);
+  handleProgressPointer(event, desktopDockProgress);
 });
 
 desktopMiniProgress.addEventListener("click", (event) => {
-  handleDesktopProgressTap(event, desktopMiniProgress);
+  handleProgressPointer(event, desktopMiniProgress);
 });
+
+function bindProgressDrag(container) {
+  const onPointerDown = (event) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    handleProgressPointer(event, container);
+    const pointerId = event.pointerId;
+    container.setPointerCapture(pointerId);
+
+    const onPointerMove = (moveEvent) => {
+      if (moveEvent.pointerId !== pointerId) return;
+      handleProgressPointer(moveEvent, container);
+    };
+
+    const onPointerEnd = (endEvent) => {
+      if (endEvent.pointerId !== pointerId) return;
+      container.removeEventListener("pointermove", onPointerMove);
+      container.removeEventListener("pointerup", onPointerEnd);
+      container.removeEventListener("pointercancel", onPointerEnd);
+      if (container.hasPointerCapture(pointerId)) {
+        container.releasePointerCapture(pointerId);
+      }
+    };
+
+    container.addEventListener("pointermove", onPointerMove);
+    container.addEventListener("pointerup", onPointerEnd);
+    container.addEventListener("pointercancel", onPointerEnd);
+  };
+
+  container.addEventListener("pointerdown", onPointerDown);
+}
+
+bindProgressDrag(desktopDockProgress);
+bindProgressDrag(desktopMiniProgress);
 
 seekBar.addEventListener("input", () => {
   if (!Number.isFinite(audioPlayer.duration) || audioPlayer.duration <= 0) return;
@@ -1381,6 +1444,8 @@ function updateTrackMetaUi() {
   fullTitle.textContent = currentTrack.title || DEFAULT_TRACK_TITLE;
   fullArtist.textContent = currentTrack.author || DEFAULT_TRACK_ARTIST;
   setExpandedArtwork(currentVideoId, currentTrack.thumbnail || DEFAULT_TRACK_THUMBNAIL);
+  desktopStageTitle.textContent = currentTrack.title || DEFAULT_TRACK_TITLE;
+  desktopStageArtist.textContent = currentTrack.author || DEFAULT_TRACK_ARTIST;
   desktopDockThumb.src = currentTrack.thumbnail || DEFAULT_TRACK_THUMBNAIL;
   desktopDockTitle.textContent = currentTrack.title || DEFAULT_TRACK_TITLE;
   desktopDockArtist.textContent = currentTrack.author || DEFAULT_TRACK_ARTIST;
@@ -2201,21 +2266,37 @@ async function loadLyricsForTrack(track) {
   lyricsState.status = "Loading lyrics...";
   renderLyricsPanel();
 
-  const trackName = cleanTrackTitle(track.title);
-  const artistName = cleanArtistName(track.author);
-  if (!trackName || !artistName) {
+  const titleCandidates = buildLyricsTitleCandidates(track.title);
+  const artistCandidates = buildLyricsArtistCandidates(track.author);
+  if (!titleCandidates.length) {
     lyricsState.status = "Lyrics unavailable for this track.";
     renderLyricsPanel();
     return;
   }
 
   try {
-    const directUrl = `https://lrclib.net/api/get?track_name=${encodeURIComponent(trackName)}&artist_name=${encodeURIComponent(artistName)}`;
-    let payload = await fetch(directUrl).then((r) => (r.ok ? r.json() : null));
-    if (!payload) {
-      const searchUrl = `https://lrclib.net/api/search?track_name=${encodeURIComponent(trackName)}&artist_name=${encodeURIComponent(artistName)}`;
+    let payload = null;
+    const attempts = [];
+    const artists = artistCandidates.length ? artistCandidates : [""];
+    titleCandidates.slice(0, 4).forEach((title) => {
+      artists.slice(0, 3).forEach((artist) => {
+        attempts.push({ title, artist });
+      });
+    });
+
+    for (const attempt of attempts) {
+      if (requestId !== lyricsRequestId) return;
+      const trackName = attempt.title;
+      const artistName = attempt.artist;
+      const artistParam = artistName ? `&artist_name=${encodeURIComponent(artistName)}` : "";
+      const directUrl = `https://lrclib.net/api/get?track_name=${encodeURIComponent(trackName)}${artistParam}`;
+      payload = await fetch(directUrl).then((r) => (r.ok ? r.json() : null));
+      if (payload) break;
+
+      const searchUrl = `https://lrclib.net/api/search?track_name=${encodeURIComponent(trackName)}${artistParam}`;
       const searchPayload = await fetch(searchUrl).then((r) => (r.ok ? r.json() : []));
       payload = Array.isArray(searchPayload) && searchPayload.length ? searchPayload[0] : null;
+      if (payload) break;
     }
 
     if (requestId !== lyricsRequestId) return;
@@ -2403,17 +2484,53 @@ function getLyricsCacheKey(track) {
   return `${cleanTrackTitle(track?.title || "").toLowerCase()}::${cleanArtistName(track?.author || "").toLowerCase()}`;
 }
 
+function buildLyricsTitleCandidates(value) {
+  const raw = String(value || "");
+  const cleaned = cleanTrackTitle(raw);
+  const strippedLead = cleaned
+    .replace(/^\s*(?:official|lyric|lyrics|audio|video)\s*[:\-]\s*/i, "")
+    .trim();
+  const splitCandidates = strippedLead
+    .split(/\s+(?:[-|:])\s+/)
+    .map((part) => cleanTrackTitle(part))
+    .filter(Boolean);
+  const candidates = [cleaned, strippedLead, ...splitCandidates]
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return [...new Set(candidates)];
+}
+
+function buildLyricsArtistCandidates(value) {
+  const raw = String(value || "");
+  const cleaned = cleanArtistName(raw);
+  const primary = cleaned.split(/\s+(?:x|and|&)\s+/i).map((part) => cleanArtistName(part)).filter(Boolean);
+  const candidates = [cleaned, ...primary].map((item) => item.trim()).filter(Boolean);
+  return [...new Set(candidates)];
+}
+
 function cleanTrackTitle(value) {
   return String(value || "")
+    .replace(/https?:\/\/\S+/gi, " ")
+    .replace(/[#@][\w.-]+/g, " ")
     .replace(/\([^)]*\)/g, " ")
     .replace(/\[[^\]]*]/g, " ")
+    .replace(
+      /\b(official|video|audio|visualizer|lyric(?:s)?|mv|hd|4k|8k|remix|edit|version|live|concert|cover|karaoke|slowed|reverb|sped\s*up|nightcore|bass\s*boosted|prod\.?|produced\s+by|from|ost|soundtrack)\b/gi,
+      " "
+    )
+    .replace(/\b(ft|feat|featuring)\b.*$/gi, " ")
     .replace(/\s+/g, " ")
+    .replace(/^[\-\s|:]+|[\-\s|:]+$/g, "")
     .trim();
 }
 
 function cleanArtistName(value) {
   return String(value || "")
-    .split(/[,&|]/)[0]
+    .replace(/https?:\/\/\S+/gi, " ")
+    .replace(/[#@][\w.-]+/g, " ")
+    .split(/[|]/)[0]
+    .replace(/\b(ft|feat|featuring)\b.*$/gi, " ")
+    .replace(/\b(official|topic|vevo|records?|music|channel)\b/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -2448,7 +2565,11 @@ function updateSuggestionsOverlayPosition() {
 function updateSuggestionsOverlayVisibility() {
   const focused = document.activeElement === searchInput;
   const hasSuggestions = Boolean(searchOverlaySuggestions.querySelector("button[data-suggestion]"));
-  const shouldShow = isPlayerExpanded && focused && hasSuggestions;
+  const shouldShow =
+    isPlayerExpanded &&
+    focused &&
+    hasSuggestions &&
+    !(isPhoneUi() && hasSearched);
   updateInlineSuggestionsVisibility();
   if (!shouldShow) {
     searchOverlaySuggestions.classList.add("hidden");
@@ -2461,7 +2582,7 @@ function updateSuggestionsOverlayVisibility() {
 function updateInlineSuggestionsVisibility() {
   const focused = document.activeElement === searchInput;
   const hasSuggestions = Boolean(suggestionsList.querySelector("button[data-suggestion]"));
-  const shouldShow = !isPlayerExpanded && focused && hasSuggestions;
+  const shouldShow = !isPlayerExpanded && focused && hasSuggestions && !isPhoneUi();
   suggestionsList.classList.toggle("hidden", !shouldShow);
 }
 

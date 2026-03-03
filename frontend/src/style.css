@@ -106,6 +106,39 @@ body.player-open {
   background: rgba(255, 255, 255, 0.12);
 }
 
+.dock-menu-wrap {
+  position: relative;
+}
+
+.dock-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.55rem);
+  min-width: 9.5rem;
+  background: linear-gradient(140deg, rgba(2, 6, 23, 0.92), rgba(15, 23, 42, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.6rem;
+  box-shadow: 0 8px 30px rgba(2, 6, 23, 0.45);
+  backdrop-filter: blur(10px);
+  padding: 0.3rem;
+  z-index: 140;
+}
+
+.dock-menu-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: rgb(241 245 249);
+  text-align: left;
+  font-size: 0.85rem;
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.6rem;
+}
+
+.dock-menu-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .safe-bottom {
   padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
 }
@@ -321,6 +354,35 @@ body.player-open {
 .desktop-dock,
 .desktop-mini-bar {
   display: none;
+}
+
+body.player-open .desktop-dock-track {
+  display: none;
+}
+
+body.player-open .desktop-dock {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "time controls right";
+}
+
+body.player-open .desktop-dock-time {
+  grid-area: time;
+  position: static;
+  transform: none;
+  margin: 0;
+  min-width: auto;
+  justify-self: start;
+  pointer-events: none;
+}
+
+body.player-open .desktop-dock-controls {
+  grid-area: controls;
+  justify-self: center;
+}
+
+body.player-open .desktop-dock-right {
+  grid-area: right;
+  justify-self: end;
 }
 
 @media (max-width: 640px) {
@@ -614,12 +676,42 @@ body.player-open {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
   }
 
   .desktop-artwork {
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  .desktop-stage-meta {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0.65rem 0.75rem;
+    background: linear-gradient(180deg, rgba(2, 6, 23, 0), rgba(2, 6, 23, 0.82));
+    pointer-events: none;
+  }
+
+  .desktop-stage-title {
+    color: rgb(241 245 249);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .desktop-stage-artist {
+    margin-top: 0.22rem;
+    color: rgb(148 163 184);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .desktop-side {
@@ -766,8 +858,8 @@ body.player-open {
 
   .desktop-dock {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-areas: "controls track right";
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "time controls track right";
     align-items: center;
     gap: 0.6rem;
     position: fixed;
@@ -790,6 +882,10 @@ body.player-open {
 
   .desktop-dock-controls {
     grid-area: controls;
+  }
+
+  .desktop-dock-time {
+    grid-area: time;
   }
 
   .desktop-dock-track {
@@ -947,12 +1043,42 @@ body.player-open {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
   }
 
   .desktop-artwork {
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  .desktop-stage-meta {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 1rem 1.1rem;
+    background: linear-gradient(180deg, rgba(2, 6, 23, 0), rgba(2, 6, 23, 0.82));
+    pointer-events: none;
+  }
+
+  .desktop-stage-title {
+    color: rgb(241 245 249);
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.35rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .desktop-stage-artist {
+    margin-top: 0.28rem;
+    color: rgb(148 163 184);
+    font-size: 0.92rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .desktop-side {
@@ -1171,7 +1297,8 @@ body.player-open {
 
   .desktop-dock {
     display: grid;
-    grid-template-columns: auto minmax(260px, 1fr) auto;
+    grid-template-columns: auto auto minmax(260px, 1fr) auto;
+    grid-template-areas: "time controls track right";
     align-items: center;
     gap: 1.25rem;
     position: fixed;
@@ -1195,20 +1322,40 @@ body.player-open {
     cursor: pointer;
   }
 
-  .desktop-dock-progress-fill {
-    display: block;
-    height: 100%;
-    width: 0%;
+.desktop-dock-progress-fill {
+  display: block;
+  height: 100%;
+  width: 0%;
     background: linear-gradient(90deg, rgb(34 211 238), rgb(59 130 246));
     box-shadow: 0 0 10px rgba(34, 211, 238, 0.6);
-    transition: width 130ms linear;
-  }
+  transition: width 130ms linear;
+}
+
+.desktop-dock-progress-thumb,
+.desktop-mini-progress-thumb {
+  position: absolute;
+  top: 50%;
+  left: 0%;
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 9999px;
+  background: rgb(34 211 238);
+  box-shadow: 0 0 0 2px rgba(2, 6, 23, 0.65), 0 0 10px rgba(34, 211, 238, 0.55);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 130ms ease;
+}
 
   .desktop-dock-controls,
   .desktop-dock-right {
     display: flex;
     align-items: center;
     gap: 0.65rem;
+  }
+
+  .desktop-dock-controls {
+    grid-area: controls;
   }
 
   .dock-menu-wrap {
@@ -1267,6 +1414,7 @@ body.player-open {
   }
 
   .desktop-dock-time {
+    grid-area: time;
     margin-left: 0.45rem;
     color: rgb(203 213 225);
     font-size: 0.95rem;
@@ -1344,14 +1492,24 @@ body.player-open {
     cursor: pointer;
   }
 
-  .desktop-mini-progress-fill {
-    display: block;
-    height: 100%;
-    width: 0%;
+.desktop-mini-progress-fill {
+  display: block;
+  height: 100%;
+  width: 0%;
     background: linear-gradient(90deg, rgb(34 211 238), rgb(59 130 246));
     box-shadow: 0 0 10px rgba(34, 211, 238, 0.58);
-    transition: width 130ms linear;
+  transition: width 130ms linear;
+}
+
+@media (min-width: 1024px) {
+  body.player-open .desktop-dock-progress:hover .desktop-dock-progress-thumb {
+    opacity: 1;
   }
+
+  body.player-open .desktop-mini-progress .desktop-mini-progress-thumb {
+    opacity: 0;
+  }
+}
 
   .desktop-mini-left,
   .desktop-mini-right {
@@ -1437,8 +1595,28 @@ body.player-open {
     display: none;
   }
 
+  .desktop-lyrics-text.is-synced {
+    white-space: normal;
+    display: flex;
+    flex-direction: column;
+    gap: 0.32rem;
+  }
+
+  .desktop-lyrics-text.is-synced .lyrics-line {
+    margin: 0;
+    color: rgba(203, 213, 225, 0.72);
+    border-radius: 0.35rem;
+    padding: 0.12rem 0.35rem;
+    transition: color 140ms ease, background-color 140ms ease;
+  }
+
+  .desktop-lyrics-text.is-synced .lyrics-line.is-active {
+    color: rgb(241 245 249);
+    background: rgba(34, 211, 238, 0.2);
+  }
+
   .desktop-queue-row {
-    grid-template-columns: 1rem minmax(0, 1fr);
+    grid-template-columns: 1rem minmax(0, 1fr) auto;
     gap: 0.4rem;
     align-items: center;
   }
@@ -1450,7 +1628,7 @@ body.player-open {
 
   .desktop-queue-item {
     width: 100%;
-    grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
     gap: 0.5rem;
     padding: 0.45rem;
   }
@@ -1459,7 +1637,9 @@ body.player-open {
     position: relative;
     width: 2.2rem;
     min-width: 2.2rem;
-    margin-right: 0.35rem;
+    margin-right: 0.12rem;
+    justify-self: end;
+    align-self: center;
     justify-content: flex-end;
   }
 
@@ -1521,21 +1701,24 @@ body.player-open {
   }
 
   .fullscreen-player {
-    padding-bottom: calc(5.1rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(0.25rem + env(safe-area-inset-bottom));
   }
 
   .desktop-expanded-shell {
-    height: calc(100% - 5.1rem);
-    gap: 0.55rem;
+    height: calc(100% - 4.9rem);
+    grid-template-rows: minmax(0, 43%) minmax(0, 1fr);
+    gap: 0.4rem;
   }
 
   .desktop-stage {
-    min-height: 33vh;
-    max-height: 38vh;
+    min-height: 0;
+    max-height: none;
+    height: 100%;
   }
 
   .desktop-side {
     min-height: 0;
+    height: 100%;
   }
 
   .desktop-queue-list {
@@ -1543,7 +1726,7 @@ body.player-open {
   }
 
   .desktop-queue-item {
-    grid-template-columns: 2.2rem minmax(0, 1fr) auto;
+    grid-template-columns: 2.2rem minmax(0, 1fr);
     gap: 0.42rem;
     padding: 0.4rem;
   }
@@ -1564,9 +1747,9 @@ body.player-open {
   }
 
   .desktop-queue-tail {
-    width: 2rem;
-    min-width: 2rem;
-    margin-right: 0.2rem;
+    width: 2.1rem;
+    min-width: 2.1rem;
+    margin-right: 0.08rem;
   }
 
   .desktop-queue-duration {
@@ -1574,23 +1757,80 @@ body.player-open {
   }
 
   .desktop-dock {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "track controls";
     height: 4.9rem;
     padding: 0.45rem 0.52rem calc(0.12rem + env(safe-area-inset-bottom));
     gap: 0.38rem;
   }
 
   .desktop-dock-controls {
+    grid-area: controls;
+    justify-self: end;
     gap: 0.2rem;
   }
 
   .desktop-dock-time {
-    min-width: 4.4rem;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: auto;
     font-size: 0.8rem;
-    margin-left: 0.08rem;
+    margin-left: 0;
+    pointer-events: none;
+    z-index: 2;
   }
 
   .desktop-dock-track {
+    grid-area: track;
+    justify-self: start;
+    width: min(52vw, 14rem);
     gap: 0.35rem;
+  }
+
+  .desktop-dock-right {
+    display: none;
+  }
+
+  .desktop-dock-btn.is-active,
+  .desktop-mini-btn.is-active {
+    color: rgb(34 211 238);
+    text-shadow: 0 0 10px rgba(34, 211, 238, 0.45);
+  }
+
+  body.player-open .desktop-dock-controls #desktopPrevBtn,
+  body.player-open .desktop-dock-controls #desktopNextBtn,
+  body.player-open .desktop-dock-right #desktopShuffleBtn,
+  body.player-open .desktop-dock-right #desktopRepeatBtn,
+  body.player-open .desktop-dock-right #desktopAutoplayBtn {
+    display: inline-flex;
+  }
+
+  body.player-open .desktop-dock {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "time controls right";
+    gap: 0.3rem;
+  }
+
+  body.player-open .desktop-dock-time {
+    grid-area: time;
+    position: static;
+    left: auto;
+    transform: none;
+    margin: 0;
+    font-size: 0.78rem;
+  }
+
+  body.player-open .desktop-dock-controls {
+    grid-area: controls;
+    justify-self: center;
+  }
+
+  body.player-open .desktop-dock-right {
+    grid-area: right;
+    display: flex;
+    align-items: center;
+    gap: 0.18rem;
   }
 
   .desktop-dock-thumb {
@@ -1607,5 +1847,57 @@ body.player-open {
     margin-top: 0.04rem;
     font-size: 0.68rem;
     line-height: 0.84rem;
+  }
+
+  .desktop-mini-bar:not(.hidden) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "track left";
+    gap: 0.4rem;
+  }
+
+  .desktop-mini-left {
+    grid-area: left;
+    justify-self: end;
+  }
+
+  .desktop-mini-track {
+    grid-area: track;
+    justify-self: start;
+    width: min(52vw, 14rem);
+  }
+
+  .desktop-mini-time {
+    display: none;
+  }
+
+  .desktop-mini-right {
+    display: none;
+  }
+
+  .desktop-dock-progress,
+  .desktop-mini-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.14);
+    cursor: pointer;
+    z-index: 3;
+  }
+
+  .desktop-dock-progress-fill,
+  .desktop-mini-progress-fill {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, rgb(34 211 238), rgb(59 130 246));
+    box-shadow: 0 0 8px rgba(34, 211, 238, 0.55);
+    transition: width 130ms linear;
+  }
+
+  .desktop-dock-progress-thumb,
+  .desktop-mini-progress-thumb {
+    opacity: 1;
   }
 }

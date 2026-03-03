@@ -2281,19 +2281,35 @@ function parseSyncedLyrics(lrcText) {
   if (!lrcText) return [];
   const lines = [];
   lrcText.split("\n").forEach((raw) => {
-    const match = raw.match(/\[(\d{1,2}):(\d{1,2}(?:\.\d{1,3})?)\](.*)/);
-    if (!match) return;
-    const minutes = Number(match[1]);
-    const seconds = Number(match[2]);
-    const text = (match[3] || "").trim();
-    if (!Number.isFinite(minutes) || !Number.isFinite(seconds) || !text) return;
-    lines.push({ time: minutes * 60 + seconds, text });
+    const row = String(raw || "").trim();
+    if (!row) return;
+
+    // Capture all timestamps on a line (e.g. [00:12.10][00:15,20]text).
+    const timeMatches = [...row.matchAll(/\[(\d{1,2}):(\d{1,2}(?:[.,]\d{1,3})?)\]/g)];
+    if (!timeMatches.length) return;
+
+    // Remove timestamps and metadata-like tags from lyric text.
+    const text = row
+      .replace(/\[\d{1,2}:\d{1,2}(?:[.,]\d{1,3})?\]/g, "")
+      .replace(/\[[a-z]{1,8}:[^\]]*]/gi, "")
+      .trim();
+    if (!text) return;
+
+    timeMatches.forEach((match) => {
+      const minutes = Number(match[1]);
+      const seconds = Number(String(match[2]).replace(",", "."));
+      if (!Number.isFinite(minutes) || !Number.isFinite(seconds)) return;
+      lines.push({ time: minutes * 60 + seconds, text });
+    });
   });
   return lines.sort((a, b) => a.time - b.time);
 }
 
 function updateSyncedLyrics(currentTime) {
-  if (!lyricsState.synced || !lyricsState.lines.length) return;
+  if (!lyricsState.synced || !lyricsState.lines.length) {
+    lyricsActiveLineIndex = -1;
+    return;
+  }
   let activeIndex = -1;
   for (let i = 0; i < lyricsState.lines.length; i += 1) {
     if (lyricsState.lines[i].time <= currentTime) {
@@ -2302,7 +2318,13 @@ function updateSyncedLyrics(currentTime) {
       break;
     }
   }
-  if (activeIndex < 0 || activeIndex === lyricsActiveLineIndex) return;
+  if (activeIndex < 0) {
+    lyricsActiveLineIndex = -1;
+    applyActiveSyncedLyric(desktopLyricsText, -1);
+    applyActiveSyncedLyric(mobileLyricsText, -1);
+    return;
+  }
+  if (activeIndex === lyricsActiveLineIndex) return;
   lyricsActiveLineIndex = activeIndex;
   applyActiveSyncedLyric(desktopLyricsText, activeIndex);
   applyActiveSyncedLyric(mobileLyricsText, activeIndex);
@@ -2311,10 +2333,23 @@ function updateSyncedLyrics(currentTime) {
 function applyActiveSyncedLyric(container, activeIndex) {
   const previous = container.querySelector(".lyrics-line.is-active");
   if (previous) previous.classList.remove("is-active");
+  if (activeIndex < 0) return;
   const active = container.querySelector(`[data-lyric-index="${activeIndex}"]`);
   if (!active) return;
   active.classList.add("is-active");
   active.scrollIntoView({ block: "center", behavior: "auto" });
+}
+
+function handleSyncedLyricsClick(event) {
+  if (!lyricsState.synced || !lyricsState.lines.length) return;
+  const target = event.target;
+  if (!(target instanceof Element)) return;
+  const line = target.closest(".lyrics-line");
+  if (!(line instanceof HTMLElement)) return;
+  const timestamp = Number(line.dataset.lyricTime);
+  if (!Number.isFinite(timestamp)) return;
+  audioPlayer.currentTime = Math.max(0, timestamp);
+  updatePlayerUi();
 }
 
 function renderLyricsPanel() {
@@ -2325,7 +2360,7 @@ function renderLyricsPanel() {
     const syncedMarkup = lyricsState.lines
       .map(
         (line, index) =>
-          `<p class="lyrics-line" data-lyric-index="${index}">${escapeHtml(line.text)}</p>`
+          `<p class="lyrics-line" data-lyric-index="${index}" data-lyric-time="${line.time}">${escapeHtml(line.text)}</p>`
       )
       .join("");
     desktopLyricsText.classList.add("is-synced");
@@ -2360,6 +2395,9 @@ function ensureLyricsLoadedForCurrentTrack() {
   if (lyricsState.synced || lyricsState.plainText) return;
   void loadLyricsForTrack(currentTrack);
 }
+
+desktopLyricsText.addEventListener("click", handleSyncedLyricsClick);
+mobileLyricsText.addEventListener("click", handleSyncedLyricsClick);
 
 function getLyricsCacheKey(track) {
   return `${cleanTrackTitle(track?.title || "").toLowerCase()}::${cleanArtistName(track?.author || "").toLowerCase()}`;

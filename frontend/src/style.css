@@ -1020,13 +1020,14 @@ body.player-open {
     gap: 0.35rem;
   }
 
-  .lyrics-line {
-    margin: 0;
-    color: rgba(203, 213, 225, 0.68);
-    transition: color 140ms ease, background-color 140ms ease;
-    border-radius: 0.35rem;
-    padding: 0.1rem 0.35rem;
-  }
+.lyrics-line {
+  margin: 0;
+  color: rgba(203, 213, 225, 0.68);
+  transition: color 140ms ease, background-color 140ms ease;
+  border-radius: 0.35rem;
+  padding: 0.1rem 0.35rem;
+  cursor: pointer;
+}
 
   .lyrics-line.is-active {
     color: rgb(241 245 249);
@@ -1514,6 +1515,11 @@ body.player-open {
 }
 
 @media (max-width: 640px) {
+  .desktop-volume,
+  .desktop-mini-volume {
+    display: none;
+  }
+
   .fullscreen-player {
     padding-bottom: calc(5.1rem + env(safe-area-inset-bottom));
   }
